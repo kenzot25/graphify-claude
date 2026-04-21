@@ -14,6 +14,40 @@ Treat this skill as a bridge into MCP, not as the primary query interface.
 
 If a graph already exists, use the MCP server and MCP tools instead of the old skill-driven `query` / `path` / `explain` workflow.
 
+## MCP Not Connected — Hard Stop
+
+Before doing anything else, check whether the nexo MCP tools (`graph_summary`, `resolve_nodes`, etc.) are available in this session.
+
+If they are **not** available:
+
+1. **Do not fall back to grep, file reads, or semantic search for architecture/relationship questions.** Raw file scanning bypasses the graph and produces lower-quality answers.
+2. Report the situation clearly:
+   > MCP not connected. The nexo graph tools are unavailable in this session.
+3. Provide the user with these exact reconnection steps:
+
+   **Option A — VS Code MCP config** (`settings.json` or `.vscode/mcp.json`):
+   ```json
+   {
+     "mcpServers": {
+       "nexo": {
+         "command": "nexo",
+         "args": ["mcp", "nexo-out/graph.json"]
+       }
+     }
+   }
+   ```
+   After adding the config, reload the MCP session (re-open the chat or run **MCP: Restart Server**).
+
+   **Option B — rebuild and restart manually**, then reload:
+   ```bash
+   nexo update .
+   nexo mcp nexo-out/graph.json
+   ```
+
+4. Stop. Do not attempt to answer architecture or relationship questions without live MCP tools.
+
+---
+
 ## Fast Path
 
 If `nexo-out/graph.json` exists:

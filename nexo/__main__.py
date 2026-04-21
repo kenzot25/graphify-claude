@@ -589,6 +589,13 @@ def main() -> None:
         print("    --uninstall-hook        remove the PostToolUse session hook")
         print("  benchmark [graph.json]  measure token reduction vs naive full-corpus approach")
         print("  doctor                  validate install, version marker, CLAUDE.md, and PreToolUse hook")
+        print("  verify-mcp              verify AI used nexo MCP tools from session logs")
+        print("    --workspace DIR       workspace path to match log entries (default: .)")
+        print("    --session-log FILE    session log path (default: ~/.nexo_session.jsonl)")
+        print("    --window-hours N      lookback window in hours (default: 24)")
+        print("    --mode M              basic | strict (default: strict)")
+        print("    --min-calls N         minimum nexo MCP tool calls required (default: 2)")
+        print("    --json                print machine-readable JSON result")
         print("  hook install            install post-commit/post-checkout git hooks (all platforms)")
         print("  hook uninstall          remove git hooks")
         print("  hook status             check if git hooks are installed")
@@ -1060,6 +1067,86 @@ def main() -> None:
         exit_code = doctor(Path("."))
         if exit_code != 0:
             sys.exit(exit_code)
+
+    elif cmd == "verify-mcp":
+        from nexo.mcp_verify import verify_mcp_usage
+
+        workspace = Path(".")
+        session_log: Path | None = None
+        window_hours = 24
+        mode = "strict"
+        min_calls = 2
+        as_json = False
+
+        args = sys.argv[2:]
+        i = 0
+        while i < len(args):
+            token = args[i]
+            if token == "--workspace" and i + 1 < len(args):
+                workspace = Path(args[i + 1]); i += 2
+            elif token.startswith("--workspace="):
+                workspace = Path(token.split("=", 1)[1]); i += 1
+            elif token == "--session-log" and i + 1 < len(args):
+                session_log = Path(args[i + 1]); i += 2
+            elif token.startswith("--session-log="):
+                session_log = Path(token.split("=", 1)[1]); i += 1
+            elif token == "--window-hours" and i + 1 < len(args):
+                try:
+                    window_hours = int(args[i + 1])
+                except ValueError:
+                    print("error: --window-hours must be an integer", file=sys.stderr)
+                    sys.exit(1)
+                i += 2
+            elif token.startswith("--window-hours="):
+                try:
+                    window_hours = int(token.split("=", 1)[1])
+                except ValueError:
+                    print("error: --window-hours must be an integer", file=sys.stderr)
+                    sys.exit(1)
+                i += 1
+            elif token == "--mode" and i + 1 < len(args):
+                mode = args[i + 1]; i += 2
+            elif token.startswith("--mode="):
+                mode = token.split("=", 1)[1]; i += 1
+            elif token == "--min-calls" and i + 1 < len(args):
+                try:
+                    min_calls = int(args[i + 1])
+                except ValueError:
+                    print("error: --min-calls must be an integer", file=sys.stderr)
+                    sys.exit(1)
+                i += 2
+            elif token.startswith("--min-calls="):
+                try:
+                    min_calls = int(token.split("=", 1)[1])
+                except ValueError:
+                    print("error: --min-calls must be an integer", file=sys.stderr)
+                    sys.exit(1)
+                i += 1
+            elif token == "--json":
+                as_json = True; i += 1
+            else:
+                print(f"error: unknown verify-mcp option '{token}'", file=sys.stderr)
+                sys.exit(1)
+
+        try:
+            result = verify_mcp_usage(
+                workspace=workspace,
+                session_log=session_log,
+                window_hours=window_hours,
+                mode=mode,
+                min_calls=min_calls,
+            )
+        except Exception as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+        if as_json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(result["text"])
+
+        if not result["pass"]:
+            sys.exit(1)
 
     # --- Internal subcommands for the standalone pipeline ---
     elif cmd == "internal-detect":

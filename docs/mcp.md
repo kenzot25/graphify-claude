@@ -48,3 +48,66 @@ Prefer short labels or keywords over long natural-language prompts.
 - Graph paths must stay inside `nexo-out/` or `workspace-nexo-out/`.
 - Labels are sanitized before text output.
 - Remote HTTP transport is intentionally not part of the default flow.
+
+## Verify AI Actually Used MCP
+
+You can verify whether an AI session truly used nexo MCP tools (instead of falling back to plain file scanning):
+
+```bash
+nexo verify-mcp --workspace . --mode strict --window-hours 24
+```
+
+The command reads `~/.nexo_session.jsonl` by default (written by the `nexo stats --install-hook` PostToolUse hook).
+
+- `strict` mode requires at least one `graph_summary` call and at least one targeted graph query call.
+- `basic` mode only requires a minimum number of nexo MCP calls.
+
+Useful options:
+
+```bash
+nexo verify-mcp --mode basic --min-calls 1
+nexo verify-mcp --session-log /path/to/session.jsonl --json
+```
+
+Use the command exit code in CI:
+
+- `0`: verification passed
+- `1`: verification failed
+
+## Verifier Subagent (Recommended)
+
+For real project runs, use a dedicated verifier subagent after the main analysis agent finishes.
+
+Verifier subagent checks:
+
+- session evidence: nexo MCP calls exist for the same workspace and time window
+- sequence quality: at least `graph_summary` + one targeted query call
+- anti-fallback: detect if the run silently switched to grep/read-only behavior
+- answer evidence: confirm the final answer references graph-native entities
+
+Suggested verifier prompt template:
+
+```text
+You are a verifier subagent for nexo MCP usage.
+
+Inputs:
+1) Workspace path
+2) Session log (~/.nexo_session.jsonl)
+3) Final answer text from the main agent
+
+Rules:
+- Run: nexo verify-mcp --workspace <workspace> --mode strict --window-hours 24 --json
+- Fail if verification fails.
+- Fail if answer has no graph-native evidence (nodes/paths/communities).
+- Fail if answer claims graph usage but verification has zero nexo MCP calls.
+
+Output JSON:
+{
+	"verdict": "PASS" | "FAIL",
+	"mcp_summary": {...},
+	"answer_evidence_ok": true | false,
+	"reason": "..."
+}
+```
+
+This subagent-based validation is preferred over isolated unit tests because it verifies real behavior in real sessions.
