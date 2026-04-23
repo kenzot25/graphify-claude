@@ -238,6 +238,8 @@ install_from_wheel_asset() {
 
   if command -v pipx >/dev/null 2>&1; then
     pipx install "$wheel_path" --force
+    # Deploy bootstrap script for fresh terminal sessions
+    deploy_bootstrap "$pipx"
     return 0
   fi
 
@@ -252,6 +254,26 @@ install_from_wheel_asset() {
 exec "$venv_dir/bin/python" -m nexo "\$@"
 EOF
   chmod +x "$INSTALL_DIR/nexo"
+
+  # Deploy bootstrap script for fresh terminal sessions
+  deploy_bootstrap "$venv_dir/bin/python"
+}
+
+deploy_bootstrap() {
+  python_exe="$1"
+
+  # Find the bootstrap script in site-packages
+  site_packages=$("$python_exe" -c "import site; print(site.getsitepackages()[0])" 2>/dev/null)
+  if [ -z "$site_packages" ]; then
+    return 0
+  fi
+
+  bootstrap_src="$site_packages/nexo/scripts/unix/01-bootstrap.sh"
+  if [ -f "$bootstrap_src" ]; then
+    cp "$bootstrap_src" "$INSTALL_DIR/nexo-bootstrap.sh"
+    chmod +x "$INSTALL_DIR/nexo-bootstrap.sh"
+    echo "  bootstrap: deployed to $INSTALL_DIR/nexo-bootstrap.sh"
+  fi
 }
 
 REPO_EFFECTIVE="$REPO"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nexo"
-version = "0.1.3"
+version = "0.1.4"
 description = "AI coding assistant skill (Claude Code) - turn any folder of code, docs, papers, images, or videos into a queryable knowledge graph"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -63,3 +63,4 @@ include = ["nexo*"]
 
 [tool.setuptools.package-data]
 nexo = ["skill.md", "skill-windows.md", "scripts/**/*"]
+include = ["nexo/scripts/windows/01-bootstrap.ps1", "nexo/scripts/unix/01-bootstrap.sh"]

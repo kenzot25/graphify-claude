@@ -2,6 +2,20 @@
 
 Full release notes with details on each version: [GitHub Releases](https://github.com/kenzot25/nexo/releases)
 
+## 0.1.4 (2026-04-23)
+
+- **Bootstrap script for fresh terminal sessions** — ensures `nexo` works in subagent terminals and clean shells
+  - Windows: `nexo-bootstrap.ps1` deployed to install directory
+  - Unix/macOS: `nexo-bootstrap.sh` deployed to install directory
+  - Auto-detects and installs nexo via pip if not found
+  - Saves working command to `nexo-out/.nexo_bin` for consistent usage
+- **Install script enhancements**
+  - `scripts/install.ps1` now deploys bootstrap script automatically
+  - `scripts/install.sh` now deploys bootstrap script automatically
+- **Skill updates**
+  - `/nexo` skill now uses bootstrap script before any nexo command
+  - Works in both local and subagent environments
+
 ## 0.1.0 (2026-04-21)
 
 Initial release of **nexo** — local knowledge-graph engine for AI assistants.

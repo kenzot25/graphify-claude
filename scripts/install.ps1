@@ -203,6 +203,15 @@ function Install-FromSource {
     ('"{0}" -m nexo %*' -f $pythonExe)
   )
   Set-Content -Path $target -Value $shim -Encoding ascii
+
+  # Also deploy the bootstrap script for fresh terminal sessions (e.g., subagents)
+  $bootstrapSource = Join-Path $SourcePath "nexo\scripts\windows\01-bootstrap.ps1"
+  if (Test-Path $bootstrapSource) {
+    $bootstrapTarget = Join-Path $InstallPath "nexo-bootstrap.ps1"
+    Copy-Item -Path $bootstrapSource -Destination $bootstrapTarget -Force
+    Write-Host "  bootstrap: deployed to $bootstrapTarget"
+  }
+
   return $target
 }
 
@@ -264,6 +273,21 @@ function Install-FromWheelAsset {
     ('"{0}" -m nexo %*' -f $pythonExe)
   )
   Set-Content -Path $target -Value $shim -Encoding ascii
+
+  # Deploy bootstrap script for fresh terminal sessions (e.g., subagents)
+  # When installed from wheel, copy from site-packages if available
+  try {
+    $sitePackages = (Invoke-Python -Launcher $launcher -Args @("-c", "import site; print(site.getsitepackages()[0])") | Select-Object -Last 1).Trim()
+    $bootstrapInPackage = Join-Path $sitePackages "nexo\scripts\windows\01-bootstrap.ps1"
+    if (Test-Path $bootstrapInPackage) {
+      $bootstrapTarget = Join-Path $InstallPath "nexo-bootstrap.ps1"
+      Copy-Item -Path $bootstrapInPackage -Destination $bootstrapTarget -Force
+      Write-Host "  bootstrap: deployed to $bootstrapTarget"
+    }
+  } catch {
+    # Silent fail - bootstrap is optional
+  }
+
   return $target
 }
 
