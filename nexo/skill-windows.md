@@ -55,7 +55,12 @@ If `nexo-out/graph.json` exists:
 1. Start or attach the local MCP server for that graph.
 2. Call `graph_summary` first for a cheap overview.
 3. Use targeted MCP tools to answer the question.
-4. Read `nexo-out/GRAPH_REPORT.md` only for broad narrative or architecture-summary questions.
+4. If MCP tools are not attached yet, use the right CLI command for the question type (instead of only `nexo query`):
+  - broad architecture: `nexo query "<question>"`
+  - single concept details: `nexo explain "<node>"`
+  - relationship between two concepts: `nexo path "<A>" "<B>"`
+  - multi-repo question: `nexo workspace query "<question>"`
+  These are preferred over reading the full GRAPH_REPORT.md, which can be very large.
 5. If `nexo-out/wiki/index.md` exists, use it only when deeper navigation is needed.
 6. Only rebuild if the user asked for a rebuild or the graph is stale after code changes.
 
@@ -104,7 +109,7 @@ Do not send vague prose directly to low-level graph tools.
 - For “How are A and B related?”: resolve `A`, resolve `B`, then call `shortest_path`.
 - For “What does X do?”: resolve `X`, then call `explain_node` or `expand_subgraph`.
 - For “Explain the architecture”: call `graph_summary`, then `expand_subgraph` from the main hubs.
-- Read `GRAPH_REPORT.md` only when the user wants a broad written summary rather than a targeted graph lookup.
+- Never read `GRAPH_REPORT.md` in full. For broad overview questions, run `nexo query "<question>"` to get a targeted answer instead.
 - Use the wiki only when the MCP answer needs deeper document-style navigation.
 - Prefer short labels or keywords over full natural-language prompts when calling low-level tools.
 
@@ -131,7 +136,7 @@ nexo update .
 nexo mcp nexo-out/graph.json
 ```
 
-4. Read `GRAPH_REPORT.md` again before answering architecture questions.
+4. Use `nexo query "<question>"` to verify the graph answers questions correctly — do not read GRAPH_REPORT.md in full.
 
 If you modified code during this session, run `nexo update .` before further graph queries.
 
